@@ -3,6 +3,10 @@ import UIKit
 final class MovieQuizViewController: UIViewController {
     // MARK: - Lifecycle
     
+    
+    @IBOutlet weak var yesButton: UIButton!
+    @IBOutlet weak var noButton: UIButton!
+    
     @IBOutlet weak var labelCount: UILabel!
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var textLabel: UILabel!
@@ -13,8 +17,9 @@ final class MovieQuizViewController: UIViewController {
         show(quiz: viewModel)
     }
     
-    var currentQuestionIndex = 0
-    var correctAnswers = 0
+    private var currentQuestionIndex = 0
+    private var correctAnswers = 0
+    private static let textQuiz = "Рейтинг этого фильма больше чем 6?"
     
     struct QuizResultsViewModel{
         let title: String
@@ -37,43 +42,43 @@ final class MovieQuizViewController: UIViewController {
     private let questions: [QuizQuestion] = [
         QuizQuestion(
             image: "The Godfather",
-            text: "Рейтинг этого фильма больше чем 6?",
+            text: textQuiz,
             correctAnswer: true),
         QuizQuestion(
             image: "The Dark Knight",
-            text: "Рейтинг этого фильма больше чем 6?",
+            text: textQuiz,
             correctAnswer: true),
         QuizQuestion(
             image: "Kill Bill",
-            text: "Рейтинг этого фильма больше чем 6?",
+            text: textQuiz,
             correctAnswer: true),
         QuizQuestion(
             image: "The Avengers",
-            text: "Рейтинг этого фильма больше чем 6",
+            text: textQuiz,
             correctAnswer: true),
         QuizQuestion(
             image: "Deadpool",
-            text: "Рейтинг этого фильма больше чем 6?",
+            text: textQuiz,
             correctAnswer: true),
         QuizQuestion(
             image: "The Green Knight",
-            text: "Рейтинг этого фильма больше чем 6?",
+            text: textQuiz,
             correctAnswer: true),
         QuizQuestion(
             image: "Old",
-            text: "Рейтинг этого фильма больше чем 6?",
+            text: textQuiz,
             correctAnswer: false),
         QuizQuestion(
             image: "The Ice Age Adventures of Buck Wild",
-            text: "Рейтинг этого слова больше чем 6?",
+            text: textQuiz,
             correctAnswer: false),
         QuizQuestion(
             image: "Tesla",
-            text: "Рейтинг этого слова больше чем 6?",
+            text: textQuiz,
             correctAnswer: false),
         QuizQuestion(
             image: "Vivarium",
-            text: "Рейтинг этого фильма больше чем 6?",
+            text: textQuiz,
             correctAnswer: false)
     ]
     
@@ -81,6 +86,11 @@ final class MovieQuizViewController: UIViewController {
         imageView.image = step.image
         labelCount.text = step.questionNumber
         textLabel.text = step.question
+        
+        imageView.layer.borderWidth = 0
+        
+        yesButton.isEnabled = true
+        noButton.isEnabled = true
     }
     
     private func show(quiz result: QuizResultsViewModel) {
@@ -142,6 +152,9 @@ final class MovieQuizViewController: UIViewController {
 
     
     private func showAnswerResult(isCorrect: Bool) {
+        
+        yesButton.isEnabled = false
+        noButton.isEnabled = false
         
         if isCorrect{
             correctAnswers += 1
