@@ -17,13 +17,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
         statisticService = StatisticService()
         let questionFactory = QuestionFactory()
-            questionFactory.delegate = self
-            self.questionFactory = questionFactory
-            questionFactory.requestNextQuestion()
+        questionFactory.delegate = self
+        self.questionFactory = questionFactory
+        questionFactory.requestNextQuestion()
         
         alertPresenter = AlertPresenter(viewController: self)
-        
-}
+    }
     
     // MARK: - QuestionFactoryDelegate
 
@@ -61,33 +60,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         statisticService.store(correct: correctAnswers, total: questionsAmount)
         
         let defaults = UserDefaults.standard
+        let gamesCount = defaults.integer(forKey: "gamesCount")
         print("Содержимое UserDefaults:", defaults.dictionaryRepresentation())
 
-        guard let bestGame = defaults.object(forKey: "bestGame") as? [String: Any] else {
-            print("bestGame не найден в UserDefaults")
-            return
-        }
-
-        
-        let bestCorrect = bestGame["correct"] as? Int ?? 0
-        let bestTotal = bestGame["total"] as? Int ?? 0
-        let formattedDate = Date()
-        print("bestCorrect:", bestCorrect)
-        print("bestTotal:", bestTotal)
-        print("formattedDate:", formattedDate)
-        print("totalAccuracy:", statisticService.totalAccuracy)
+        let currentGameAccuracy = statisticService.currentGameAccuracy
 
         let message = """
         Ваш результат: \(correctAnswers)/\(questionsAmount)
-        
-        Лучший результат:
-        \(bestCorrect)/\(bestTotal) (\(formattedDate))
-        
-        Общая точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
+        Количество попыток: \(gamesCount)
+        Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
+        Средняя точность: \(String(format: "%.2f", currentGameAccuracy))%
         """
-        
-        print("Generated message: \(message)")
-
+    
         let alertModel = AlertModel(
             title: result.title,
             message: message,
@@ -105,7 +89,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
 
-
     
     private func convert(model: QuizQuestion) -> QuizStepViewModel{
         let questionStep = QuizStepViewModel(
@@ -116,25 +99,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         return questionStep
     }
     
-   private func showNextQuestionOrResults(){
-        
+    private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            
-            let alert = UIAlertController(
+            let result = QuizResultsViewModel(
                 title: "Этот раунд окончен!",
-                message: "Ваш результат \(correctAnswers)/\(questionsAmount)",
-                preferredStyle: .alert)
-            
-            let action = UIAlertAction(title: "Сыграть еще раз", style: .default) { [weak self] _ in
-                guard let self = self else {return}
-                self.currentQuestionIndex = 0
-                self.correctAnswers = 0
-                self.questionFactory?.requestNextQuestion()
-            }
-            
-                alert.addAction(action)
-                self.present(alert, animated: true, completion: nil)
-            
+                text: "",
+                buttonText: "Сыграть еще раз"
+            )
+            show(quiz: result)
         } else {
             currentQuestionIndex += 1
             self.questionFactory?.requestNextQuestion()
@@ -177,5 +149,4 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
     }
-
 }

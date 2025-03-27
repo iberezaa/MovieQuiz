@@ -10,6 +10,7 @@ final class StatisticService {
         case bestGameDate
         case totalCorrect
         case totalQuestions
+        case currentGameAccuracy
     }
 }
 
@@ -24,6 +25,15 @@ extension StatisticService: StatisticServiceProtocol {
         }
     }
     
+    var currentGameAccuracy: Double {
+        let correctAnswers = storage.integer(forKey: Keys.totalCorrect.rawValue)
+        let totalQuestions = storage.integer(forKey: Keys.totalQuestions.rawValue)
+
+        guard totalQuestions > 0 else { return 0.0 }
+
+        return (Double(correctAnswers) / Double(totalQuestions)) * 100
+    }
+
     var bestGame: GameResult {
         get {
             let correct = storage.integer(forKey: Keys.bestGameCorrect.rawValue)
@@ -38,34 +48,28 @@ extension StatisticService: StatisticServiceProtocol {
             storage.set(newValue.date, forKey: Keys.bestGameDate.rawValue)
         }
     }
-    
-    var totalAccuracy: Double {
-        get {
-            let totalCorrect = storage.integer(forKey: Keys.totalCorrect.rawValue)
-            let totalQuestions = storage.integer(forKey: Keys.totalQuestions.rawValue)
-            
-            guard totalQuestions > 0 else { return 0 }
-            
-            return (Double(totalCorrect) / Double(totalQuestions)) * 100
-        }
-    }
-    
+
     func store(correct count: Int, total amount: Int) {
         let totalCorrect = storage.integer(forKey: Keys.totalCorrect.rawValue) + count
         let totalQuestions = storage.integer(forKey: Keys.totalQuestions.rawValue) + amount
-        
+
         storage.set(totalCorrect, forKey: Keys.totalCorrect.rawValue)
         storage.set(totalQuestions, forKey: Keys.totalQuestions.rawValue)
-        
+
         gamesCount += 1
-        
+
         let newGameResult = GameResult(correct: count, total: amount, date: Date())
-        
+
         if newGameResult.isBetterThan(bestGame) {
             bestGame = newGameResult
         }
+
+        let currentGameAccuracy = (Double(count) / Double(amount)) * 100
+        
+        storage.set(currentGameAccuracy, forKey: Keys.currentGameAccuracy.rawValue)
     }
-    
+
+
     private var totalCorrect: Int {
         get {
             return storage.integer(forKey: Keys.totalCorrect.rawValue)
