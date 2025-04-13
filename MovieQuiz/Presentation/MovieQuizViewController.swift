@@ -11,7 +11,6 @@ final class MovieQuizViewController: UIViewController {
     
     // MARK: - Properties
     private var alertPresenter: AlertPresenter?
-    private var statisticService: StatisticServiceProtocol!
     private var presenter: MovieQuizPresenter!
 
     // MARK: - Lifecycle
@@ -19,7 +18,6 @@ final class MovieQuizViewController: UIViewController {
         super.viewDidLoad()
         
         imageView.layer.cornerRadius = 20
-        statisticService = StatisticService()
         alertPresenter = AlertPresenter(viewController: self)
         presenter = MovieQuizPresenter(viewController: self)
         
@@ -37,38 +35,25 @@ final class MovieQuizViewController: UIViewController {
     }
 
     func show(quiz result: QuizResultsViewModel) {
-        let correct = presenter.correctAnswersCount
-        let currentGameAccuracy = statisticService.currentGameAccuracy
-        let bestGame = statisticService.bestGame
-        let gamesCount = UserDefaults.standard.integer(forKey: "gamesCount")
-
-        let message = """
-        Ваш результат: \(correct)/\(presenter.questionsAmount)
-        Количество попыток: \(gamesCount)
-        Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))
-        Средняя точность: \(String(format: "%.2f", currentGameAccuracy))%
-        """
-
-        let alertModel = AlertModel(title: result.title, message: message, buttonText: result.buttonText) { [weak self] in
+        let alertModel = AlertModel(
+            title: result.title,
+            message: result.text,
+            buttonText: result.buttonText
+        ) { [weak self] in
             self?.presenter.restartGame()
         }
 
         alertPresenter?.showAlert(model: alertModel)
     }
-
-    func showAnswerResult(isCorrect: Bool) {
-        yesButton.isEnabled = false
-        noButton.isEnabled = false
-
-        imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 8
-        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            self?.presenter.showNextQuestionOrResults()
+    
+    func highlightImageBorder(isCorrect: Bool) {
+            imageView.layer.masksToBounds = true
+            imageView.layer.borderWidth = 8
+            imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
+            yesButton.isEnabled = false
+            noButton.isEnabled = false
         }
-    }
-
+    
     func showNetworkError(message: String) {
         hideLoadingIndicator()
 
