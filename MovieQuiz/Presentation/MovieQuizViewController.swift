@@ -60,8 +60,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
                                buttonText: "Попробовать еще раз") { [weak self] in
             guard let self = self else { return }
             
-            self.presenter.restart()
-            self.correctAnswers = 0
+            self.presenter.restartGame()
             self.questionFactory?.requestNextQuestion()
         }
         
@@ -72,8 +71,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     func didReceiveNextQuestion(question: QuizQuestion?) {
             presenter.didReceiveNextQuestion(question: question)
         }
-    
-    private var correctAnswers = 0
+
     static let textQuiz = "Рейтинг этого фильма больше чем 6?"
     
     func show(quiz step: QuizStepViewModel){
@@ -88,14 +86,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     func show(quiz result: QuizResultsViewModel) {
-        statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
+        let correct = presenter.correctAnswers
+        statisticService.store(correct: correct, total: presenter.questionsAmount)
         
         let defaults = UserDefaults.standard
         let gamesCount = defaults.integer(forKey: "gamesCount")
         let currentGameAccuracy = statisticService.currentGameAccuracy
         
         let message = """
-        Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
+        Ваш результат: \(correct)/\(presenter.questionsAmount)
         Количество попыток: \(gamesCount)
         Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
         Средняя точность: \(String(format: "%.2f", currentGameAccuracy))%
@@ -107,13 +106,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             buttonText: result.buttonText
         ) { [weak self] in
             guard let self = self else { return }
-            self.presenter.restart()
-            self.correctAnswers = 0
+            self.presenter.restartGame()
             self.questionFactory?.requestNextQuestion()
         }
 
         alertPresenter?.showAlert(model: alertModel)
     }
+
     
     func requestNextQuestion() {
         questionFactory?.requestNextQuestion()
@@ -125,9 +124,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         yesButton.isEnabled = false
         noButton.isEnabled = false
         
-        if isCorrect{
-            correctAnswers += 1
-        }
+        presenter.didAnswer(isCorrectAnswer: isCorrect)
         
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
