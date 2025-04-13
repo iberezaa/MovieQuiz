@@ -1,36 +1,33 @@
 import UIKit
 
-final class MovieQuizPresenter {
+final class MovieQuizPresenter: QuestionFactoryDelegate {
     weak var viewController: MovieQuizViewController?
 
-    let questionsAmount: Int = 10
-    private var currentQuestionIndex: Int = 0
-    var correctAnswers = 0
-    var currentQuestion: QuizQuestion?
+    let questionsAmount = 10
+    private var currentQuestionIndex = 0
+    private var correctAnswers = 0
+    private var currentQuestion: QuizQuestion?
+    private var questionFactory: QuestionFactoryProtocol?
+
+    init(viewController: MovieQuizViewController) {
+        self.viewController = viewController
+        self.questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        self.questionFactory?.loadData()
+        self.viewController?.showLoadingIndicator()
+    }
 
     var correctAnswersCount: Int {
         return correctAnswers
     }
 
-    func convert(model: QuizQuestion) -> QuizStepViewModel {
-        return QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
-        )
-    }
-
-    func nextQuestion() {
-        currentQuestionIndex += 1
+    var isLastQuestion: Bool {
+        return currentQuestionIndex == questionsAmount - 1
     }
 
     func restartGame() {
         currentQuestionIndex = 0
         correctAnswers = 0
-    }
-
-    var isLastQuestion: Bool {
-        return currentQuestionIndex == questionsAmount - 1
+        questionFactory?.requestNextQuestion()
     }
 
     func yesButtonClicked() {
@@ -45,25 +42,14 @@ final class MovieQuizPresenter {
         guard let currentQuestion = currentQuestion else {
             return
         }
-
-        let givenAnswer = isYes
-        let isCorrect = givenAnswer == currentQuestion.correctAnswer
-
+        let isCorrect = isYes == currentQuestion.correctAnswer
+        didAnswer(isCorrectAnswer: isCorrect)
         viewController?.showAnswerResult(isCorrect: isCorrect)
     }
 
     func didAnswer(isCorrectAnswer: Bool) {
         if isCorrectAnswer {
             correctAnswers += 1
-        }
-    }
-
-    func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else { return }
-        currentQuestion = question
-        let viewModel = convert(model: question)
-        DispatchQueue.main.async { [weak self] in
-            self?.viewController?.show(quiz: viewModel)
         }
     }
 
@@ -76,8 +62,34 @@ final class MovieQuizPresenter {
             )
             viewController?.show(quiz: result)
         } else {
-            nextQuestion()
-            viewController?.requestNextQuestion()
+            currentQuestionIndex += 1
+            questionFactory?.requestNextQuestion()
+        }
+    }
+
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else { return }
+        currentQuestion = question
+        let viewModel = QuizStepViewModel(
+            image: UIImage(data: question.image) ?? UIImage(),
+            question: question.text,
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
+        )
+        DispatchQueue.main.async { [weak self] in
+            self?.viewController?.show(quiz: viewModel)
+        }
+    }
+
+    func didLoadDataFromServer() {
+        DispatchQueue.main.async { [weak self] in
+            self?.viewController?.hideLoadingIndicator()
+            self?.questionFactory?.requestNextQuestion()
+        }
+    }
+
+    func didFailToLoadData(with error: Error) {
+        DispatchQueue.main.async { [weak self] in
+            self?.viewController?.showNetworkError(message: error.localizedDescription)
         }
     }
 }
