@@ -1,6 +1,6 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, MovieQuizViewControllerProtocol {
     // MARK: - UI Elements
     @IBOutlet weak var yesButton: UIButton!
     @IBOutlet weak var noButton: UIButton!

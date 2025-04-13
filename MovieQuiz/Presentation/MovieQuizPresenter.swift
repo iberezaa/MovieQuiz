@@ -1,7 +1,7 @@
 import UIKit
 
 final class MovieQuizPresenter: QuestionFactoryDelegate {
-    weak var viewController: MovieQuizViewController?
+    weak var viewController: MovieQuizViewControllerProtocol?
     private let statisticService: StatisticServiceProtocol
 
     private let questionsAmount = 10
@@ -10,7 +10,10 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     private var currentQuestion: QuizQuestion?
     private var questionFactory: QuestionFactoryProtocol?
 
-    init(viewController: MovieQuizViewController, statisticService: StatisticServiceProtocol = StatisticService()) {
+    init(
+        viewController: MovieQuizViewControllerProtocol,
+        statisticService: StatisticServiceProtocol = StatisticService()
+    ) {
         self.viewController = viewController
         self.statisticService = statisticService
         self.questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
@@ -39,6 +42,14 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     func noButtonClicked() {
         didAnswer(isYes: false)
     }
+    
+    func convert(model: QuizQuestion) -> QuizStepViewModel {
+            return QuizStepViewModel(
+                image: UIImage(data: model.image) ?? UIImage(),
+                question: model.text,
+                questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)"
+            )
+        }
 
     private func incrementScoreIfCorrect(isCorrectAnswer: Bool) {
         if isCorrectAnswer {
